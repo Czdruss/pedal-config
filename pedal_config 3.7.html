@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-Performance Pedal Configurator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --m-light-blue: #00A1E4; --m-dark-blue: #1A165C; --m-red: #E32219; --m-white: #FFFFFF;
+            --bg-base: #090a0f; --card-bg: rgba(22, 24, 32, 0.6); --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #e2e8f0; --text-muted: #94a3b8; --neon-glow: 0 0 10px;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; background-color: var(--bg-base); 
+            background-image: radial-gradient(circle at 15% 50%, rgba(0, 161, 228, 0.08), transparent 25%), radial-gradient(circle at 85% 30%, rgba(227, 34, 25, 0.08), transparent 25%);
+            color: var(--text-main); padding: 40px 20px; margin: 0; min-height: 100vh;
+        }
+        .container { max-width: 1000px; margin: auto; }
+        .header-section { text-align: center; margin-bottom: 40px; }
+        h1 { color: var(--m-white); font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin: 0 0 10px 0; font-size: 28px; display: flex; align-items: center; justify-content: center; }
+        .m-logo { display: inline-flex; align-items: baseline; margin-right: 15px; }
+        .m-slash { font-style: italic; font-weight: 900; font-size: 1.2em; margin-right: -4px; }
+        .m-slash.cyan { color: var(--m-light-blue); text-shadow: var(--neon-glow) rgba(0,161,228,0.4); }
+        .m-slash.blue { color: #2e26a8; text-shadow: var(--neon-glow) rgba(31,26,112,0.4); }
+        .m-slash.red { color: var(--m-red); text-shadow: var(--neon-glow) rgba(227,34,25,0.4); }
+        .m-letter { font-style: italic; font-weight: 900; font-size: 1.3em; color: var(--m-white); margin-left: 4px; }
+        .status-badge { display: inline-block; padding: 6px 16px; background: rgba(227, 34, 25, 0.1); color: var(--m-red); border: 1px solid rgba(227, 34, 25, 0.3); border-radius: 20px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s ease; }
+        .status-badge.connected { background: rgba(0, 161, 228, 0.1); color: var(--m-light-blue); border-color: rgba(0, 161, 228, 0.3); box-shadow: var(--neon-glow) rgba(0,161,228,0.2); }
+        .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; margin-bottom: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); overflow: hidden; position: relative; }
+        .card-content { padding: 30px; }
+        h2 { border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; margin-top: 0; font-size: 18px; color: var(--m-white); display: flex; align-items: center; gap: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .m-stripe { height: 4px; width: 100%; background: linear-gradient(90deg, var(--m-light-blue) 0%, var(--m-light-blue) 33.33%, var(--m-dark-blue) 33.33%, var(--m-dark-blue) 66.66%, var(--m-red) 66.66%, var(--m-red) 100%); }
+        button { font-family: 'Inter', sans-serif; border: none; padding: 12px 20px; font-size: 13px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        button:hover { transform: translateY(-2px); }
+        button:active { transform: translateY(1px); }
+        .btn-connect { background: var(--m-light-blue); color: #000; font-size: 15px; padding: 16px; margin-top: 15px; box-shadow: 0 4px 15px rgba(0, 161, 228, 0.3); }
+        .btn-connect:hover { background: #1cb5f2; box-shadow: 0 6px 20px rgba(0, 161, 228, 0.5); }
+        .action-toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+        .btn-save { background: #2a2e3d; color: var(--text-main); border: 1px solid #3f4459; } 
+        .btn-save:hover { background: #353a4d; color: white;}
+        .btn-apply { background: var(--text-main); color: #000; } 
+        .btn-apply:hover { background: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.3);}
+        .btn-calib-gas { background: var(--m-light-blue); color: #000; margin-top: 10px; }
+        .btn-calib-brake { background: var(--m-red); color: white; margin-top: 10px; }
+        .control-group { margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03); }
+        .control-group label { flex: 1.2; font-size: 13px; font-weight: 500; color: var(--text-muted); }
+        input[type="range"] { flex: 2; margin: 0 20px; -webkit-appearance: none; background: transparent; cursor: pointer; }
+        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 6px; background: #2a2e3d; border-radius: 3px; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--text-main); margin-top: -5px; box-shadow: 0 0 10px rgba(0,0,0,0.5); transition: transform 0.1s; }
+        input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
+        input[type="range"].slider-blue::-webkit-slider-thumb { background: var(--m-light-blue); box-shadow: 0 0 10px var(--m-light-blue); }
+        input[type="range"].slider-red::-webkit-slider-thumb { background: var(--m-red); box-shadow: 0 0 10px var(--m-red); }
+        input[type="number"].num-input { width: 65px; text-align: center; background: #000; color: var(--m-white); border: 1px solid #3f4459; border-radius: 6px; padding: 8px 0; font-weight: 700; font-size: 14px; font-family: 'JetBrains Mono', monospace; transition: all 0.2s; }
+        input[type="number"].num-input:focus { outline: none; border-color: var(--text-main); box-shadow: 0 0 8px rgba(255,255,255,0.2); }
+        .curve-header { margin-top: 35px; margin-bottom: 15px; font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; display: flex; justify-content: space-between;}
+        .curve-wrapper { background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid rgba(255,255,255,0.03); padding: 20px 15px; }
+        #brakeCurveCanvas { width: 100%; height: 120px; display: block; margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .curve-container { display: flex; justify-content: space-between; }
+        .curve-slider { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .curve-slider input[type="range"] { -webkit-appearance: slider-vertical; appearance: slider-vertical; width: 14px; height: 140px; margin: 0; padding: 0; display: block; accent-color: var(--m-red); cursor: pointer; background: transparent; }
+        .curve-slider input[type="number"] { width: 40px; text-align: center; background: transparent; color: var(--m-white); border: none; border-bottom: 1px solid #3f4459; border-radius: 0; padding: 4px 0; font-weight: 700; font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+        .curve-slider small { color: var(--text-muted); font-size: 11px; font-weight: 600;}
+        .pedal-layout { display: flex; gap: 40px; }
+        .pedal-controls { flex: 1; }
+        .pedal-visuals { width: 180px; display: flex; justify-content: space-around; align-items: flex-end; padding-bottom: 20px; border-left: 1px solid rgba(255,255,255,0.05); padding-left: 20px; }
+        .bar-col { display: flex; flex-direction: column; align-items: center; height: 320px; justify-content: flex-end; position: relative;}
+        .bar-title { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; position: absolute; top: -20px; font-weight: 700;}
+        .bar-bg { width: 30px; height: 260px; background: #000; border-radius: 4px; border: 1px solid #2a2e3d; position: relative; overflow: hidden; }
+        .bar-fill { width: 100%; position: absolute; bottom: 0; transition: height 0.08s ease-out; height: 0%; }
+        .fill-gas { background: linear-gradient(to top, #005f87, var(--m-light-blue)); box-shadow: 0 -5px 15px rgba(0, 161, 228, 0.5); } 
+        .fill-brake { background: linear-gradient(to top, #8a130e, var(--m-red)); box-shadow: 0 -5px 15px rgba(227, 34, 25, 0.5); }
+        .dz-line { width: 44px; height: 2px; background: #fff; position: absolute; left: -7px; z-index: 10; bottom: 0%; transition: bottom 0.2s; box-shadow: 0 0 5px #fff; }
+        .dz-arrow { position: absolute; left: 42px; top: -4px; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-right: 6px solid #fff; }
+        .dz-line-top { width: 44px; height: 2px; background: #fff; position: absolute; left: -7px; z-index: 10; top: 0%; transition: top 0.2s; box-shadow: 0 0 5px #fff; }
+        .dz-arrow-top { position: absolute; left: 42px; top: -4px; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-right: 6px solid #fff; }
+        .bar-label { font-size: 15px; margin-top: 15px; font-weight: 800; width: 50px; text-align: center; font-family: 'JetBrains Mono', monospace;}
+        .lbl-gas { color: var(--m-light-blue); text-shadow: 0 0 8px rgba(0, 161, 228, 0.4); }
+        .lbl-brake { color: var(--m-red); text-shadow: 0 0 8px rgba(227, 34, 25, 0.4); }
+        input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .graph-wrapper { background: #000; border: 1px solid #2a2e3d; border-radius: 8px; padding: 15px; margin-top: 10px; position: relative; overflow: hidden; }
+        #telemetryCanvas { width: 100%; height: 220px; display: block; }
+        .graph-legend { display: flex; justify-content: center; gap: 30px; margin-top: 15px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .legend-item { display: flex; align-items: center; gap: 8px; }
+        .legend-color { width: 12px; height: 12px; border-radius: 3px; }
+        @media (max-width: 768px) { .pedal-layout { flex-direction: column; } .pedal-visuals { width: 100%; border-left: none; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; padding-left: 0; justify-content: center; gap: 40px;} .curve-slider input[type="range"] { height: 100px; } .action-toolbar { grid-template-columns: 1fr; } }
+        @keyframes slideUpFade { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        .header-section { animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .action-toolbar { opacity: 0; animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.1s; }
+        .card { opacity: 0; animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease; }
+        .card:nth-child(3) { animation-delay: 0.2s; } .card:nth-child(4) { animation-delay: 0.4s; } .card:nth-child(5) { animation-delay: 0.6s; } 
+        .card:hover { transform: translateY(-5px); box-shadow: 0 25px 50px rgba(0,0,0,0.8); border-color: rgba(255, 255, 255, 0.15); }
+        @keyframes pulseGlow { 0% { box-shadow: 0 0 10px rgba(0, 161, 228, 0.2); } 50% { box-shadow: 0 0 25px rgba(0, 161, 228, 0.6); } 100% { box-shadow: 0 0 10px rgba(0, 161, 228, 0.2); } }
+        .status-badge.connected { animation: pulseGlow 2.5s infinite; }
+        .btn-connect { animation: pulseGlow 2s infinite; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-connect:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 25px rgba(0, 161, 228, 0.5); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-section">
+        <h1>
+            <span class="m-logo">
+                <span class="m-slash cyan">/</span>
+                <span class="m-slash blue">/</span>
+                <span class="m-slash red">/</span>
+                <span class="m-letter">M</span>
+            </span>
+            Pedal Configurator
+        </h1>
+        <div id="status" class="status-badge">Disconnected</div>
+        <button id="connectBtn" class="btn-connect">Connect to Device</button>
+    </div>
+
+    <div class="action-toolbar">
+        <button class="btn-save" onclick="saveConfig()">Save to Pedals EEPROM</button>
+        <button class="btn-apply" onclick="applyConfig()">Apply/Test Config</button>
+    </div>
+
+    <div class="card">
+        <div class="m-stripe"></div>
+        <div class="card-content">
+            <h2><span style="font-size: 1.2em">🚀</span> Accelerator (Gas)</h2>
+            <div class="pedal-layout">
+                <div class="pedal-controls">
+                    <div class="control-group">
+                        <label>Lower Deadzone (%)</label>
+                        <input type="range" id="DZ_GMIN" class="slider-blue" min="0" max="50" value="2" oninput="updateFromSlider('DZ_GMIN', this.value, true)">
+                        <input type="number" id="DZ_GMIN_num" class="num-input" value="2" onchange="updateFromNum('DZ_GMIN', this.value, true)" onclick="this.select()">
+                    </div>
+                    <div class="control-group">
+                        <label>Upper Deadzone (%)</label>
+                        <input type="range" id="DZ_GMAX" class="slider-blue" min="0" max="50" value="2" oninput="updateFromSlider('DZ_GMAX', this.value, true)">
+                        <input type="number" id="DZ_GMAX_num" class="num-input" value="2" onchange="updateFromNum('DZ_GMAX', this.value, true)" onclick="this.select()">
+                    </div>
+                    <div class="control-group">
+                        <label>Smoothness (0-99)</label>
+                        <input type="range" id="GSMOOTH" class="slider-blue" min="0" max="99" value="0" oninput="updateFromSlider('GSMOOTH', this.value, true)">
+                        <input type="number" id="GSMOOTH_num" class="num-input" value="0" onchange="updateFromNum('GSMOOTH', this.value, true)" onclick="this.select()">
+                    </div>
+                    <button id="btnGasCalib" class="btn-calib-gas" onclick="toggleGasCalib()">Start Throttle Calibration</button>
+                </div>
+
+                <div class="pedal-visuals">
+                    <div class="bar-col">
+                        <div class="bar-title">Raw</div>
+                        <div style="position: relative;">
+                            <div id="gas-dz-min-line" class="dz-line"><div class="dz-arrow"></div></div>
+                            <div id="gas-dz-max-line" class="dz-line-top"><div class="dz-arrow-top"></div></div>
+                            <div class="bar-bg"><div id="gas-raw-fill" class="bar-fill fill-gas"></div></div>
+                        </div>
+                        <div id="gas-raw-lbl" class="bar-label lbl-gas">0%</div>
+                    </div>
+                    <div class="bar-col">
+                        <div class="bar-title">Output</div>
+                        <div class="bar-bg"><div id="gas-out-fill" class="bar-fill fill-gas"></div></div>
+                        <div id="gas-out-lbl" class="bar-label lbl-gas">0%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="m-stripe"></div>
+        <div class="card-content">
+            <h2><span style="font-size: 1.2em">🛑</span> Loadcell Brake</h2>
+            <div class="pedal-layout">
+                <div class="pedal-controls">
+                    <div class="control-group">
+                        <label>Loadcell Sensitivity (RAW/KG)</label>
+                        <input type="range" id="RAW" class="slider-red" min="1000" max="25000" value="7375" oninput="updateFromSlider('RAW', this.value, true)">
+                        <input type="number" id="RAW_num" class="num-input" value="7375" onchange="updateFromNum('RAW', this.value, true)" onclick="this.select()">
+                    </div>
+                    <div class="control-group">
+                        <label>Deadzone Force (Kg)</label>
+                        <input type="range" id="DEAD" class="slider-red" min="0" max="200" value="25" oninput="updateFromSlider('DEAD', this.value, true)">
+                        <input type="number" step="0.1" id="DEAD_num" class="num-input" value="2.5" onchange="updateFromNum('DEAD', this.value, true)" onclick="this.select()">
+                    </div>
+                    <div class="control-group">
+                        <label>Max Force (Kg)</label>
+                        <input type="range" id="MAXL" class="slider-red" min="100" max="2000" value="550" oninput="updateFromSlider('MAXL', this.value, true)">
+                        <input type="number" step="0.1" id="MAXL_num" class="num-input" value="55.0" onchange="updateFromNum('MAXL', this.value, true)" onclick="this.select()">
+                    </div>
+                    <div class="control-group">
+                        <label>Smoothness (0-99)</label>
+                        <input type="range" id="BSMOOTH" class="slider-red" min="0" max="99" value="0" oninput="updateFromSlider('BSMOOTH', this.value, true)">
+                        <input type="number" id="BSMOOTH_num" class="num-input" value="0" onchange="updateFromNum('BSMOOTH', this.value, true)" onclick="this.select()">
+                    </div>
+                    <div class="control-group">
+                        <label>Haptic Filter Window (Hz)</label>
+                        <input type="range" id="HAPTIC" class="slider-red" min="0" max="100" value="31" oninput="updateFromSlider('HAPTIC', this.value, true)">
+                        <input type="number" id="HAPTIC_num" class="num-input" value="31" onchange="updateFromNum('HAPTIC', this.value, true)" onclick="this.select()">
+                    </div>
+                    <div class="control-group">
+                        <label>Vibration Cooldown (ms)</label>
+                        <input type="range" id="COOLDOWN" class="slider-red" min="0" max="250" value="80" oninput="updateFromSlider('COOLDOWN', this.value, true)">
+                        <input type="number" id="COOLDOWN_num" class="num-input" value="80" onchange="updateFromNum('COOLDOWN', this.value, true)" onclick="this.select()">
+                    </div>
+
+                    <button class="btn-calib-brake" onclick="sendCmd('ZERO', '1')">Calibrate Loadcell Zero Point</button>
+                    
+                    <div style="text-align: center; margin-top: 16px; margin-bottom: 5px; font-size: 13px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03);">
+                        Force apply by user: <span id="brake-force-val" style="color: var(--m-red); font-weight: 800; font-size: 16px; text-shadow: 0 0 8px rgba(227, 34, 25, 0.4);">0.000</span> KG
+                    </div>
+                    
+                    <div class="curve-header">
+                        <span>🎢 Brake Force Equalizer</span>
+                        <span style="color: var(--m-red)">0% - 100%</span>
+                    </div>
+                    
+                    <div class="curve-wrapper">
+                        <canvas id="brakeCurveCanvas"></canvas>
+                        <div class="curve-container" id="curve-sliders"></div>
+                    </div>
+                </div>
+
+                <div class="pedal-visuals">
+                    <div class="bar-col">
+                        <div class="bar-title">Raw</div>
+                        <div style="position: relative;">
+                            <div id="dz-line" class="dz-line"><div class="dz-arrow"></div></div>
+                            <div class="bar-bg"><div id="dz-fill" class="bar-fill fill-brake"></div></div>
+                        </div>
+                        <div id="dz-lbl" class="bar-label lbl-brake">0%</div>
+                    </div>
+                    <div class="bar-col">
+                        <div class="bar-title">Output</div>
+                        <div class="bar-bg"><div id="out-fill" class="bar-fill fill-brake"></div></div>
+                        <div id="out-lbl" class="bar-label lbl-brake">0%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="m-stripe"></div>
+        <div class="card-content">
+            <h2><span style="font-size: 1.2em">📈</span> Live Telemetry</h2>
+            <div class="graph-wrapper"><canvas id="telemetryCanvas"></canvas></div>
+            <div class="graph-legend">
+                <div class="legend-item"><div class="legend-color" style="background: var(--m-light-blue); box-shadow: 0 0 8px var(--m-light-blue);"></div><span style="color: var(--text-main);">Gas Output</span></div>
+                <div class="legend-item"><div class="legend-color" style="background: var(--m-red); box-shadow: 0 0 8px var(--m-red);"></div><span style="color: var(--text-main);">Brake Output</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let port, writer;
+    
+    // Giao quyền kiểm soát hoàn toàn cho Mạch (Không dùng localStorage nữa)
+    let gasMinRaw = 888; 
+    let gasMaxRaw = 2188;
+
+    const domDzFill = document.getElementById('dz-fill');
+    const domDzLbl = document.getElementById('dz-lbl');
+    const domOutFill = document.getElementById('out-fill');
+    const domOutLbl = document.getElementById('out-lbl');
+    const domGasRawFill = document.getElementById('gas-raw-fill');
+    const domGasRawLbl = document.getElementById('gas-raw-lbl');
+    const domGasOutFill = document.getElementById('gas-out-fill');
+    const domGasOutLbl = document.getElementById('gas-out-lbl');
+    const inputMaxL = document.getElementById('MAXL');
+    const inputRaw = document.getElementById('RAW'); 
+
+    const curveContainer = document.getElementById('curve-sliders');
+    for (let i = 0; i <= 10; i++) {
+        curveContainer.innerHTML += `
+            <div class="curve-slider">
+                <input type="range" id="crv_slide_${i}" min="0" max="100" value="0" oninput="syncCurve(${i}, this.value, 'slider', true)">
+                <input type="number" id="crv_num_${i}" min="0" max="100" value="0" onchange="syncCurve(${i}, this.value, 'num', true)" onclick="this.select()">
+                <small>${i*10}%</small>
+            </div>
+        `;
+    }
+
+    const MAX_GRAPH_POINTS = 400; 
+    let gasHistory = new Array(MAX_GRAPH_POINTS).fill(0);
+    let brakeHistory = new Array(MAX_GRAPH_POINTS).fill(0);
+    let canvas, ctx, curveCanvas, curveCtx;
+    let isConnected = false;
+
+    window.onload = () => { 
+        canvas = document.getElementById('telemetryCanvas');
+        ctx = canvas.getContext('2d');
+        curveCanvas = document.getElementById('brakeCurveCanvas');
+        curveCtx = curveCanvas.getContext('2d');
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        requestAnimationFrame(renderLoop);
+        setTimeout(drawBrakeCurve, 50);
+    };
+
+    function resizeCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+        if (canvas) {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.style.width = `${rect.width - 30}px`; canvas.style.height = `220px`;
+            canvas.width = (rect.width - 30) * dpr; canvas.height = 220 * dpr; ctx.scale(dpr, dpr);
+        }
+        if (curveCanvas) {
+            const rect2 = curveCanvas.getBoundingClientRect();
+            curveCanvas.style.width = `${rect2.width}px`; curveCanvas.style.height = `${rect2.height}px`;
+            curveCanvas.width = rect2.width * dpr; curveCanvas.height = rect2.height * dpr; curveCtx.scale(dpr, dpr);
+            drawBrakeCurve();
+        }
+    }
+
+    function drawBrakeCurve() {
+        if (!curveCtx || !curveCanvas) return;
+        let w = curveCanvas.clientWidth, h = curveCanvas.clientHeight;
+        
+        curveCtx.clearRect(0, 0, w, h);
+        curveCtx.strokeStyle = "rgba(255, 255, 255, 0.05)"; curveCtx.lineWidth = 1; curveCtx.beginPath();
+        for (let i = 0; i <= 4; i++) { let y = i * (h / 4); curveCtx.moveTo(0, y); curveCtx.lineTo(w, y); }
+        curveCtx.stroke();
+        
+        let canvasRect = curveCanvas.getBoundingClientRect();
+        let points = [];
+        for (let i = 0; i <= 10; i++) {
+            let val = parseInt(document.getElementById(`crv_num_${i}`).value) || 0;
+            let sliderEl = document.getElementById(`crv_slide_${i}`);
+            let x = sliderEl ? (sliderEl.getBoundingClientRect().left - canvasRect.left + (sliderEl.getBoundingClientRect().width / 2)) : (i * (w / 10));
+            let y = h - (val / 100) * h;
+            points.push({x, y});
+        }
+        
+        curveCtx.beginPath(); curveCtx.strokeStyle = "var(--m-red)"; curveCtx.lineWidth = 3; curveCtx.lineJoin = "round";
+        curveCtx.shadowColor = "rgba(227, 34, 25, 0.6)"; curveCtx.shadowBlur = 10;
+        for (let i = 0; i < points.length; i++) { if (i === 0) curveCtx.moveTo(points[i].x, points[i].y); else curveCtx.lineTo(points[i].x, points[i].y); }
+        curveCtx.stroke();
+        
+        curveCtx.lineTo(points[points.length-1].x, h); curveCtx.lineTo(points[0].x, h); curveCtx.closePath();
+        let gradient = curveCtx.createLinearGradient(0, 0, 0, h);
+        gradient.addColorStop(0, "rgba(227, 34, 25, 0.25)"); gradient.addColorStop(1, "rgba(0,0,0,0)");
+        curveCtx.fillStyle = gradient; curveCtx.shadowBlur = 0; curveCtx.fill();
+        
+        curveCtx.fillStyle = "#ffffff";
+        for (let i = 0; i < points.length; i++) { curveCtx.beginPath(); curveCtx.arc(points[i].x, points[i].y, 4.5, 0, Math.PI * 2); curveCtx.fill(); }
+    }
+
+    const delay = ms => new Promise(res => setTimeout(res, ms)); 
+
+    async function saveConfig() {
+        if (!writer) { alert("Vui lòng Connect trước!"); return; }
+        let btn = document.querySelector('.btn-save');
+        btn.innerText = "Syncing & Saving..."; btn.style.background = "#eab308"; btn.style.color = "#000";
+
+        try {
+            let ids = ['RAW', 'DZ_GMIN', 'DZ_GMAX', 'GSMOOTH', 'DEAD', 'MAXL', 'BSMOOTH', 'HAPTIC', 'COOLDOWN'];
+            for (let id of ids) { await sendCmd(id, document.getElementById(id).value); await delay(5); }
+            for (let i = 0; i <= 10; i++) { await sendCmd(`CRV${i}`, document.getElementById(`crv_num_${i}`).value); await delay(10); }
+            await sendCmd('SAVE', '1');
+
+            btn.innerText = "Saved Successfully ✓"; btn.style.background = "#22c55e"; btn.style.color = "#fff";
+            setTimeout(() => { btn.innerText = "Save to Pedals EEPROM"; btn.style.background = "#2a2e3d"; btn.style.color = "var(--text-main)"; }, 2000);
+        } catch (e) {
+            btn.innerText = "Error!"; btn.style.background = "var(--m-red)";
+            setTimeout(() => { btn.innerText = "Save to Pedals EEPROM"; btn.style.background = "#2a2e3d"; }, 1500);
+        }
+    }
+
+    async function applyConfig() {
+        if (!writer) { alert("Thiết bị chưa kết nối. Vui lòng Connect trước!"); return; }
+        let btn = document.querySelector('.btn-apply'); let oldText = btn.innerText;
+        btn.innerText = "Applying...";
+        try {
+            let ids = ['RAW', 'DZ_GMIN', 'DZ_GMAX', 'GSMOOTH', 'DEAD', 'MAXL', 'BSMOOTH', 'HAPTIC', 'COOLDOWN'];
+            for (let id of ids) { await sendCmd(id, document.getElementById(id).value); await delay(10); }
+            for (let i = 0; i <= 10; i++) { await sendCmd(`CRV${i}`, document.getElementById(`crv_num_${i}`).value); await delay(10); }
+            btn.innerText = "Applied ✓"; btn.style.background = "#22c55e";
+        } catch (e) { btn.innerText = "Error!"; btn.style.background = "var(--m-red)"; }
+        setTimeout(() => { btn.innerText = oldText; btn.style.background = "var(--text-main)"; }, 1500);
+    }
+
+    let isCalibratingGas = false;
+    function toggleGasCalib() {
+        if(!writer) { alert("Vui lòng kết nối với thiết bị trước!"); return; }
+        let btn = document.getElementById('btnGasCalib');
+        if(!isCalibratingGas) {
+            sendCmd('GCAL', '1'); isCalibratingGas = true; btn.innerText = "Stop & Save Calibration"; btn.style.background = "var(--m-red)"; btn.style.color = "white";
+        } else {
+            sendCmd('GCAL', '0'); isCalibratingGas = false; btn.innerText = "Start Auto-Calibration"; btn.style.background = "var(--m-light-blue)"; btn.style.color = "black";
+        }
+    }
+
+    document.getElementById('connectBtn').addEventListener('click', async () => {
+        try {
+            port = await navigator.serial.requestPort();
+            await port.open({ baudRate: 115200 });
+            
+            const encoder = new TextEncoderStream(); encoder.readable.pipeTo(port.writable); writer = encoder.writable.getWriter();
+            let statusBadge = document.getElementById('status');
+            statusBadge.innerText = "Connected, Syncing..."; statusBadge.className = "status-badge connected";
+            document.getElementById('connectBtn').style.display = "none";
+            isConnected = true;
+            
+            readSerialLoop();
+
+            // WebUI hỏi Mạch cấu hình thay vì nhét cấu hình vào mạch
+            setTimeout(() => { sendCmd('SYNC', '1'); }, 500);
+
+        } catch (e) { console.error(e); alert("Connection error!"); }
+    });
+
+    async function sendCmd(cmd, val) { if (!writer) return; await writer.write(`${cmd}:${val}\n`); }
+
+    let sendTimeouts = {}; let lastSendTimes = {}; const THROTTLE_LIMIT = 100; 
+
+    async function throttledSendCmd(cmd, val) {
+        if (!writer) return; const now = Date.now();
+        if (now - (lastSendTimes[cmd] || 0) >= THROTTLE_LIMIT) { lastSendTimes[cmd] = now; await sendCmd(cmd, val); } 
+        else { clearTimeout(sendTimeouts[cmd]); sendTimeouts[cmd] = setTimeout(async () => { lastSendTimes[cmd] = Date.now(); await sendCmd(cmd, val); }, THROTTLE_LIMIT - (now - lastSendTimes[cmd])); }
+    }
+
+    function updateFromSlider(id, val, transmit = true) {
+        let displayVal = val; if(id === 'DEAD' || id === 'MAXL') { displayVal = (val / 10).toFixed(1); }
+        document.getElementById(id + '_num').value = displayVal; updateDzLine();
+        if(transmit) throttledSendCmd(id, val);
+    }
+
+    function updateFromNum(id, val, transmit = true) {
+        let sliderVal = parseFloat(val); if (isNaN(sliderVal)) return;
+        if (id === 'DEAD' || id === 'MAXL') sliderVal = Math.round(sliderVal * 10); else sliderVal = Math.round(sliderVal);
+        let slider = document.getElementById(id);
+        if (sliderVal < parseInt(slider.min)) sliderVal = parseInt(slider.min); if (sliderVal > parseInt(slider.max)) sliderVal = parseInt(slider.max);
+        slider.value = sliderVal;
+        if (id === 'DEAD' || id === 'MAXL') document.getElementById(id + '_num').value = (sliderVal / 10).toFixed(1); else document.getElementById(id + '_num').value = sliderVal;
+        updateDzLine(); if(transmit) sendCmd(id, sliderVal);
+    }
+
+    function syncCurve(index, val, source, transmit = true) {
+        let numVal = parseInt(val); if (isNaN(numVal)) numVal = 0; if (numVal < 0) numVal = 0; if (numVal > 100) numVal = 100;
+        if (source === 'slider') document.getElementById(`crv_num_${index}`).value = numVal;
+        else if (source === 'num') { document.getElementById(`crv_num_${index}`).value = numVal; document.getElementById(`crv_slide_${index}`).value = numVal; }
+        if(transmit) { if (source === 'slider') throttledSendCmd(`CRV${index}`, numVal); else sendCmd(`CRV${index}`, numVal); }
+        drawBrakeCurve();
+    }
+
+    function updateDzLine() {
+        let dead_val = parseInt(document.getElementById('DEAD').value) || 0; let max_val = parseInt(document.getElementById('MAXL').value) || 1;
+        let dz_pct = (dead_val / max_val) * 100; if (dz_pct > 100) dz_pct = 100;
+        document.getElementById('dz-line').style.bottom = dz_pct + '%';
+
+        let gmin_pct = parseInt(document.getElementById('DZ_GMIN').value) || 0; let gmax_pct = parseInt(document.getElementById('DZ_GMAX').value) || 0;
+        document.getElementById('gas-dz-min-line').style.bottom = gmin_pct + '%'; document.getElementById('gas-dz-max-line').style.top = gmax_pct + '%';
+    }
+
+    async function readSerialLoop() {
+        const textDecoder = new TextDecoderStream(); port.readable.pipeTo(textDecoder.writable);
+        const reader = textDecoder.readable.getReader(); let buffer = '';
+        try {
+            while (true) {
+                const { value, done } = await reader.read(); if (done) break;
+                buffer += value; let lines = buffer.split('\n'); buffer = lines.pop(); 
+                for (let line of lines) {
+                    line = line.trim();
+                    if (line.startsWith("TELE:")) parseTelemetry(line);
+                    else if (line.startsWith("GAS_CALIBRATED_MIN:")) parseGasCalibration(line);
+                    else if (line.startsWith("CFG:")) parseDeviceConfig(line); // Đọc cấu hình từ mạch
+                }
+            }
+        } catch (error) { console.error("Ngắt kết nối Serial:", error); 
+        } finally { reader.releaseLock(); writer = null; isConnected = false; document.getElementById('status').innerText = "Disconnected"; document.getElementById('status').className = "status-badge"; document.getElementById('connectBtn').style.display = "block"; }
+    }
+    
+    // HÀM MỚI: NHẬN CẤU HÌNH TỪ MẠCH VÀ VẼ LÊN GIAO DIỆN
+    function parseDeviceConfig(line) {
+        let parts = line.substring(4).split(':');
+        if (parts.length >= 22) {
+            updateFromNum('RAW', parts[0], false);
+            updateFromNum('DEAD', parseInt(parts[1])/10, false);
+            updateFromNum('MAXL', parseInt(parts[2])/10, false);
+            updateFromNum('BSMOOTH', parts[3], false);
+            updateFromNum('HAPTIC', parts[4], false);
+            updateFromNum('COOLDOWN', parts[5], false);
+            
+            gasMinRaw = parseInt(parts[6]);
+            gasMaxRaw = parseInt(parts[7]);
+            
+            updateFromNum('DZ_GMIN', parts[8], false);
+            updateFromNum('DZ_GMAX', parts[9], false);
+            updateFromNum('GSMOOTH', parts[10], false);
+            
+            for(let i=0; i<=10; i++) {
+                syncCurve(i, parts[11+i], 'num', false);
+            }
+            
+            document.getElementById('status').innerText = "Hardware Synced ✓";
+        }
+    }
+
+    function parseGasCalibration(line) {
+        let parts = line.split('_MAX:');
+        if(parts.length === 2) {
+            gasMinRaw = parseInt(parts[0].split(':')[1]); gasMaxRaw = parseInt(parts[1]);
+            setTimeout(() => { alert(`✅ Hiệu chuẩn Ga hoàn tất!\nMin: ${gasMinRaw}\nMax: ${gasMaxRaw}`); }, 100);
+        }
+    }
+
+    let lastForceTextUpdate = 0;
+    function parseTelemetry(teleString) {
+        let parts = teleString.split(':'); let brake_out_pct = 0; let gas_out_pct = 0;
+        if (parts.length >= 4) {
+            let current_raw = parseInt(parts[1]), zero_raw = parseInt(parts[2]), output_val = parseInt(parts[3]);
+            if(!isNaN(current_raw) && !isNaN(zero_raw) && !isNaN(output_val)) {
+                let max_kg_x10 = parseInt(inputMaxL.value) || 1; let current_raw_per_kg = parseInt(inputRaw.value) || 7375; 
+                let raw_range = (max_kg_x10 * current_raw_per_kg) / 10;
+                let force_kg = (current_raw - zero_raw) / current_raw_per_kg; if (force_kg < 0) force_kg = 0; 
+                
+                let now = Date.now();
+                if (now - lastForceTextUpdate > 100) { document.getElementById('brake-force-val').innerText = force_kg.toFixed(3); lastForceTextUpdate = now; }
+                
+                let input_pct = ((current_raw - zero_raw) / raw_range) * 100;
+                if (input_pct < 0) input_pct = 0; if (input_pct > 100) input_pct = 100;
+                brake_out_pct = (output_val / 65535) * 100;
+
+                domDzFill.style.height = input_pct + '%'; domDzLbl.innerText = Math.round(input_pct) + '%';
+                domOutFill.style.height = brake_out_pct + '%'; domOutLbl.innerText = Math.round(brake_out_pct) + '%';
+            }
+        }
+        if (parts.length >= 6) {
+            let gas_raw = parseInt(parts[4]), gas_out = parseInt(parts[5]);
+            if(!isNaN(gas_raw) && !isNaN(gas_out)) {
+                let g_range = gasMaxRaw - gasMinRaw; if (g_range < 1) g_range = 1;
+                let gas_in_pct = ((gas_raw - gasMinRaw) / g_range) * 100;
+                if (gas_in_pct < 0) gas_in_pct = 0; if (gas_in_pct > 100) gas_in_pct = 100;
+                gas_out_pct = (gas_out / 65535) * 100;
+
+                domGasRawFill.style.height = gas_in_pct + '%'; domGasRawLbl.innerText = Math.round(gas_in_pct) + '%';
+                domGasOutFill.style.height = gas_out_pct + '%'; domGasOutLbl.innerText = Math.round(gas_out_pct) + '%';
+            }
+        }
+        gasHistory.push(gas_out_pct); gasHistory.shift(); brakeHistory.push(brake_out_pct); brakeHistory.shift();
+    }
+
+    function renderLoop() { drawGraph(); requestAnimationFrame(renderLoop); }
+
+    function drawGraph() {
+        if (!ctx) return; const w = canvas.width / (window.devicePixelRatio || 1); const h = canvas.height / (window.devicePixelRatio || 1);
+        ctx.clearRect(0, 0, w, h); ctx.strokeStyle = "rgba(255, 255, 255, 0.05)"; ctx.lineWidth = 1; ctx.beginPath();
+        for (let i = 1; i <= 4; i++) { let y = h - (i * 20 / 100) * h; ctx.moveTo(0, y); ctx.lineTo(w, y); } ctx.stroke();
+
+        function drawLine(data, color, fillGlow) {
+            ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.lineJoin = "round"; ctx.shadowColor = color; ctx.shadowBlur = 10;
+            for (let i = 0; i < MAX_GRAPH_POINTS; i++) {
+                let x = (i / (MAX_GRAPH_POINTS - 1)) * w; let y = h - (data[i] / 100) * h;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            if(fillGlow) {
+                ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+                let gradient = ctx.createLinearGradient(0, 0, 0, h);
+                gradient.addColorStop(0, fillGlow); gradient.addColorStop(1, "rgba(0,0,0,0)");
+                ctx.fillStyle = gradient; ctx.shadowBlur = 0; ctx.fill();
+            }
+            ctx.shadowBlur = 0; 
+        }
+        drawLine(gasHistory, '#00A1E4', 'rgba(0, 161, 228, 0.15)'); drawLine(brakeHistory, '#E32219', 'rgba(227, 34, 25, 0.15)'); 
+    }
+</script>
+</body>
+</html>
