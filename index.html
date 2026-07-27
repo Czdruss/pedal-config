@@ -44,6 +44,8 @@
         .btn-apply:hover { background: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.3);}
         .btn-calib-gas { background: var(--m-light-blue); color: #000; margin-top: 10px; }
         .btn-calib-brake { background: var(--m-red); color: white; margin-top: 10px; }
+        .btn-zero-gas { background: #2a2e3d; color: var(--text-main); border: 1px solid #3f4459; margin-top: 10px; }
+        .btn-zero-gas:hover { background: #353a4d; border-color: var(--m-light-blue); }
         .control-group { margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03); }
         .control-group label { flex: 1.2; font-size: 13px; font-weight: 500; color: var(--text-muted); }
         input[type="range"] { flex: 2; margin: 0 20px; -webkit-appearance: none; background: transparent; cursor: pointer; }
@@ -140,7 +142,10 @@
                         <input type="range" id="GSMOOTH" class="slider-blue" min="0" max="99" value="0" oninput="updateFromSlider('GSMOOTH', this.value, true)">
                         <input type="number" id="GSMOOTH_num" class="num-input" value="0" onchange="updateFromNum('GSMOOTH', this.value, true)" onclick="this.select()">
                     </div>
+                    
                     <button id="btnGasCalib" class="btn-calib-gas" onclick="toggleGasCalib()">Start Throttle Calibration</button>
+                    <!-- NEW GAS AUTO ZERO BUTTON -->
+                    <button id="btnGasZero" class="btn-zero-gas" onclick="autoZeroGas()">Auto-Zero Gas Pedal</button>
                 </div>
 
                 <div class="pedal-visuals">
@@ -389,6 +394,32 @@
         }
     }
 
+    // HÀM MỚI: Gọi lệnh GZERO và Yêu cầu Mạch trả về cấu hình mới
+    async function autoZeroGas() {
+        if (!writer) { alert("Vui lòng kết nối với thiết bị trước!"); return; }
+        let btn = document.getElementById('btnGasZero');
+        let oldText = btn.innerText;
+        
+        btn.innerText = "Zeroing...";
+        btn.style.color = "white";
+        btn.style.borderColor = "var(--m-light-blue)";
+        
+        await sendCmd('GZERO', '1');
+        
+        // Đợi Core 1 lấy mẫu xong rồi yêu cầu mạch gửi lại Config để WebUI cập nhật thanh Raw
+        setTimeout(() => {
+            sendCmd('SYNC', '1');
+            btn.innerText = "Zero Point Updated ✓";
+            btn.style.color = "var(--m-light-blue)";
+        }, 200);
+
+        setTimeout(() => {
+            btn.innerText = oldText;
+            btn.style.color = "var(--text-main)";
+            btn.style.borderColor = "#3f4459";
+        }, 2000);
+    }
+
     document.getElementById('connectBtn').addEventListener('click', async () => {
         try {
             port = await navigator.serial.requestPort();
@@ -469,7 +500,7 @@
         } finally { reader.releaseLock(); writer = null; isConnected = false; document.getElementById('status').innerText = "Disconnected"; document.getElementById('status').className = "status-badge"; document.getElementById('connectBtn').style.display = "block"; }
     }
     
-    // HÀM MỚI: NHẬN CẤU HÌNH TỪ MẠCH VÀ VẼ LÊN GIAO DIỆN
+    // NHẬN CẤU HÌNH TỪ MẠCH VÀ VẼ LÊN GIAO DIỆN
     function parseDeviceConfig(line) {
         let parts = line.substring(4).split(':');
         if (parts.length >= 22) {
